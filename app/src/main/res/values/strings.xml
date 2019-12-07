@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">GeoCalendar</string>
     <string name="title_activity_maps">Map</string>
+    <string name="dialog_positive_button">Yes</string>
+    <string name="dialog_negative_button">No</string>
+    <string name="add_dialog_message">Create a new Event here?</string>
+    <string name="add_dialog_title">Add Event</string>
 </resources>
