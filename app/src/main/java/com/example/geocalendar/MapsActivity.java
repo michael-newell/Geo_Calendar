@@ -1,3 +1,12 @@
+/**
+ * This application allows the user to see all their calendar events on a map
+ * CPSC 312-01, Fall 2019
+ * Final project
+ * No sources to cite.
+ *
+ * @authors Andrew Brodhead, Michael Newell
+ * @version v1.0 12/8/2019
+ */
 package com.example.geocalendar;
 
 import androidx.annotation.NonNull;
@@ -29,19 +38,26 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
+/**
+ * This class displays the map on the screen that shows all events the user currently has
+ */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
-    private GoogleMap mMap;
     final static String TAG = "MapsActivity";
-    CalendarHelper calendarHelper;
     //15,000 ms per 1/4 minute
     final static int QUARTER_MINUTE = 15000;
     final static int CALENDAR_REQUEST_CODE = 1;
+
+    private GoogleMap mMap;
+    CalendarHelper calendarHelper;
     List<Marker> currentMarkers;
 
+    /**
+     * This method is triggered when the fragment is created
+     * @param savedInstanceState the previous saved instance state
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,12 +86,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         centerMap();
         addAllEventsToMap();
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            /**
+             * Triggers when the user long clicks on the map
+             * @param latLng the latitude and longitude where the user clicked
+             */
             @Override
             public void onMapLongClick(final LatLng latLng) {
                 AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this);
                 DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                     /**
-                     * Triggers when
+                     * Triggers when a dialog interface button is clicked
                      * @param dialog the dialog object which was interacted with
                      * @param which the button that was pressed
                      */
@@ -98,15 +118,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         .show();
             }
         });
+        //start the refreshing of the screen to detect for deleted events
         runMapRefresh();
     }
 
+    /**
+     * Centers the map on Gonzaga University
+     */
     public void centerMap() {
         CameraUpdate gonzagaCameraUpdate = CameraUpdateFactory.newLatLngZoom(
                 getLatLngUsingGeocoding("Gonzaga University"), 15.0f);
         mMap.moveCamera(gonzagaCameraUpdate);
     }
 
+    /**
+     * Takes an address and geocodes it into latitude/longitude coordinates
+     * Borrowed from in-class code
+     * @param addressStr the string address that should be converted to coordinates
+     * @return the first latitude/longitude result that matches the address passed in
+     */
     private LatLng getLatLngUsingGeocoding(String addressStr) {
         LatLng latLng = null;
         Geocoder geocoder = new Geocoder(this);
@@ -117,12 +147,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 latLng = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
             }
         } catch (IOException e) {
+            //error is thrown if user does not have location services enabled
             e.printStackTrace();
+            Toast.makeText(this, "Unable to Access location services", Toast.LENGTH_SHORT).show();
+            //default LatLng so the program doesn't crash
+            return new LatLng(0, 0);
         }
-
         return latLng;
     }
 
+    /**
+     * Reverse geocodes a latitude longitude object into a string address
+     * adapted from in-class code
+     * @param latLng the coordinates that are to be translated into an address
+     * @return the first address that matches the input coordinates
+     */
     private String getAddressUsingLatLng(LatLng latLng) {
         String address = null;
         Geocoder geocoder = new Geocoder(this);
@@ -140,6 +179,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return address;
     }
 
+    /**
+     * Starts an intent to add a single event to the user's calendar and
+     * passes the location the user clicked on to the calendar app.
+     * @param latLng the location that the user selected
+     */
     public void addEventToCalendar(LatLng latLng) {
         String address = getAddressUsingLatLng(latLng);
         Intent intent = new Intent(Intent.ACTION_INSERT)
@@ -148,29 +192,46 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         startActivity(intent);
     }
 
+    /**
+     * Adds a marker to the map corresponding to a single event object
+     * @param event the event that is to be placed on the map
+     */
     public void addEventMarker(Event event) {
         MarkerOptions eventMarker = new MarkerOptions();
         eventMarker.title(event.getTitle());
         eventMarker.snippet(event.getDescription());
         eventMarker.position(getLatLngUsingGeocoding(event.getLocation()));
         Marker markerObject = mMap.addMarker(eventMarker);
+        //keep track of each marker so that we can delete them all
         currentMarkers.add(markerObject);
     }
 
+    /**
+     * Clears all markers currently on the map and readds them
+     */
     public void addAllEventsToMap() {
         removeAllMarkers();
+        //get the list of events from the calendar content provider
         List<Event> eventsList = calendarHelper.getEventsList();
         for(Event e: eventsList) {
             addEventMarker(e);
         }
     }
 
+    /**
+     * Removes all markers from the map
+     */
     public void removeAllMarkers() {
         for(Marker m: currentMarkers) {
             m.remove();
         }
     }
 
+    /**
+     * Runs a method every 1/4 minute to refresh the markers on the map
+     * we need to do this because the calendar takes a while to show when an event is deleted
+     * when querying it
+     */
     public void runMapRefresh() {
         final Handler handler = new Handler();
         handler.post(new Runnable() {
@@ -182,14 +243,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    /**
+     * Triggers when the application comes back into focus
+     */
     @Override
     protected void onResume() {
         super.onResume();
+        //check permissions to read/write calendar
         if(mMap != null) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
                     == PackageManager.PERMISSION_GRANTED
                     && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
                     == PackageManager.PERMISSION_GRANTED) {
+                //add all our events to the map
                 addAllEventsToMap();
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{
@@ -198,6 +264,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    /**
+     * Triggers when a request for the permissions necessary for the application to function returns
+     * @param requestCode the code that the request returned
+     * @param permissions the list of permissions requested
+     * @param grantResults the list of grant/rejects for requested permissions
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(requestCode == CALENDAR_REQUEST_CODE) {

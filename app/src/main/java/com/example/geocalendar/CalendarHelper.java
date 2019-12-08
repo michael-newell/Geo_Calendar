@@ -1,4 +1,14 @@
+/**
+ * This application allows the user to see all their calendar events on a map
+ * CPSC 312-01, Fall 2019
+ * Final project
+ * No sources to cite.
+ *
+ * @authors Andrew Brodhead, Michael Newell
+ * @version v1.0 12/8/2019
+ */
 package com.example.geocalendar;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -61,10 +71,10 @@ public class CalendarHelper {
                 //log out the event we just grabbed
                 Log.d(TAG, "id:" + cursor.getString(0));
                 Log.d(TAG, "title:" + cursor.getString(1));
-                Log.d(TAG, "description:" + cursor.getString(2));
-                Log.d(TAG, "startdate:" + cursor.getString(3));
-                Log.d(TAG, "enddate:" + cursor.getString(4));
-                Log.d(TAG, "location:" + cursor.getString(5));
+                Log.d(TAG, "description:" + cursor.getString(5));
+                Log.d(TAG, "startdate:" + cursor.getString(2));
+                Log.d(TAG, "enddate:" + cursor.getString(3));
+                Log.d(TAG, "location:" + cursor.getString(4));
             }
             cursor.close();
         }
